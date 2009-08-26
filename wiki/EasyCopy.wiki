@@ -1,4 +1,4 @@
-EasyCopy，简单、便捷的带目录文件复制，并以Plug-in的方式集成在Eclipse平台上
+简单、便捷的带目录文件复制，并以Plug-in的方式集成在Eclipse平台上
 
 = Introduction =
 
