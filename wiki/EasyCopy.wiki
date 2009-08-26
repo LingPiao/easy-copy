@@ -1,8 +1,8 @@
-简单、便捷的带目录文件复制，并以Plug-in的方式集成在Eclipse平台上
+Eclipse上的带目录类拷贝插件
 
 = Introduction =
 
-Eclipse上的带目录类拷贝插件
+简单、便捷的带目录文件复制，并以Plug-in的方式集成在Eclipse平台上
 
 
 = Details =
