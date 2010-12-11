@@ -23,6 +23,15 @@ import java.util.regex.Pattern;
 public class DirList {
 
 	public static void main(String[] args) {
+		currentPath();
+	}
+
+	private static void currentPath() {
+		File path = new File(".");
+		System.out.print(path.getAbsolutePath());
+	}
+
+	private static void testPath() {
 		File path = new File("C:/TEMP/VIDTEST/a");
 		String[] list;
 		list = path.list(new DirFilter("CorbaTemplate\\$.*\\.class"));

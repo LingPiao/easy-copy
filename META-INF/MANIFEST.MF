@@ -7,6 +7,8 @@ Bundle-Activator: com.ai.tools.easycopy.Activator
 Bundle-Vendor: AI
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.core.resources
+ org.eclipse.core.resources,
+ org.eclipse.jdt.core;bundle-version="3.4.4"
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Eclipse-LazyStart: true
+Bundle-ClassPath: .

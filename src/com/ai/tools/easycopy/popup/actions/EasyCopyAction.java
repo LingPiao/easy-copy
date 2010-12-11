@@ -11,11 +11,19 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -43,13 +51,16 @@ public class EasyCopyAction implements IObjectActionDelegate {
 
 	// private static String GENERAL_CLASS_DIR_NAME = "classes";
 
-	private String sourceDir = "";
-
-	private String outputDir = "";
-
+	// private String sourceDir = "";
+	//
+	// private String outputDir = "";
+	//
 	private String dstDir = "";
 
+	private String projectRawLocation = "";
+	private String defaultOutput = "";
 	private String projectName = "";
+	private Map<String, String> srcClassMap = new HashMap<String, String>();
 
 	private List<String> copiedSorcesList = new ArrayList<String>();
 
@@ -78,71 +89,86 @@ public class EasyCopyAction implements IObjectActionDelegate {
 	 */
 	public void run(IAction action) {
 		int selectedCount = 0;
-		int copiedCount = 0;
 
 		if (!getProjectInfo(selectlist)) {
-			MessageDialog.openInformation(shell, "EasyCopy Plug-in", "Can not copy,Please check your settings  !");
+			// MessageDialog.openInformation(shell, "EasyCopy Plug-in",
+			// "Can not copy,Please check your settings  !");
 			return;
 		}
+		if (selectlist == null)
+			return;
 
-		if (selectlist != null) {
-
-			if (store.getBoolean(PreferenceConstants.P_OVERWRITE)) {
-				removeExistedDir(new File(this.dstDir + JAVA_FILE_SEPARATOR + this.projectName));
-			}
-
-			StringBuffer sb = new StringBuffer("Selected File List:\r\n");
-			sb.append("================================================================\r\n");
-
-			for (IAdaptable e : selectlist) {
-				if (copyClass(getDir(e))) {
-					selectedCount++;
-					sb.append(processIAdaptable(e)).append("\r\n");
-				}
-			}
-			sb.append("\r\n================================================================\r\n");
-			sb.append(selectedCount + " Files was selected!\r\n\r\n");
-			if (store.getBoolean(PreferenceConstants.P_GENERATE_LOG)) {
-				// Need to generate the file report.
-				try {
-					OutputStream out = new FileOutputStream(this.dstDir + JAVA_FILE_SEPARATOR + this.projectName + ".log");
-					PrintStream ps = new PrintStream(out);
-					ps.print(sb.toString());
-
-					if (store.getBoolean(PreferenceConstants.P_COPY_CLASSES)) {
-						ps.print(getCopiedFileList(copiedClassesList));
-						copiedCount = copiedClassesList.size();
-					} else {
-						ps.print(getCopiedFileList(copiedSorcesList));
-						copiedCount = copiedSorcesList.size();
-					}
-
-					ps.close();
-					out.close();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+		if (store.getBoolean(PreferenceConstants.P_OVERWRITE)) {
+			removeExistedDir(new File(this.dstDir + JAVA_FILE_SEPARATOR + this.projectName));
 		}
 
-		if (store.getBoolean(PreferenceConstants.P_INFORM_ME)) { 
-			//Showing the inform information
+		StringBuffer sb = new StringBuffer("");
+		selectedCount = doCopy(selectedCount, sb);
+		int copiedCount = writeReport(selectedCount, sb);
+
+		// Showing the inform information
+		if (store.getBoolean(PreferenceConstants.P_INFORM_ME)) {
 			MessageDialog.openInformation(shell, "EasyCopy Plug-in", selectedCount + " Files was selected, " + copiedCount + " Files was copied!");
 		}
+
+		cleanMaps();
 	}
 
-	private String getCopiedFileList(List<String> copiedList) {
-		StringBuffer sb = new StringBuffer("Copied File List:\r\n");
+	private int doCopy(int selectedCount, StringBuffer sb) {
+		sb.append("Selected File List:\r\n");
+		sb.append("================================================================\r\n");
+		for (IAdaptable e : selectlist) {
+			if (easyCopy(e)) {
+				selectedCount++;
+				sb.append(processIAdaptable(e)).append("\r\n");
+			}
+		}
+		sb.append("\r\n================================================================\r\n");
+		return selectedCount;
+	}
+
+	private int writeReport(int selectedCount, StringBuffer sb) {
+		int copiedCount = 0;
+		sb.append(selectedCount + " Files was selected!\r\n\r\n");
+		if (store.getBoolean(PreferenceConstants.P_GENERATE_LOG)) {
+			// Need to generate the file report.
+			try {
+				OutputStream out = new FileOutputStream(this.dstDir + JAVA_FILE_SEPARATOR + this.projectName + ".log");
+				PrintStream ps = new PrintStream(out);
+				copiedCount = getCopiedFileList(sb);
+				ps.print(sb.toString());
+				ps.close();
+				out.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return copiedCount;
+	}
+
+	private void cleanMaps() {
+		copiedSorcesList.clear();
+		copiedClassesList.clear();
+	}
+
+	private int getCopiedFileList(StringBuffer sb) {
+
+		sb.append("Copied File List:\r\n");
 		sb.append("================================================================\r\n");
 
-		for (String f : copiedList) {
+		for (String f : copiedSorcesList) {
+			sb.append(f).append("\r\n");
+		}
+
+		for (String f : copiedClassesList) {
 			sb.append(f).append("\r\n");
 		}
 		sb.append("\r\n================================================================\r\n");
-		sb.append(copiedList.size() + " Files was Copied!\r\n\r\n");
-		return sb.toString();
+		int t = copiedSorcesList.size() + copiedClassesList.size();
+		sb.append(t + " Files was Copied!\r\n\r\n");
+		return t;
 	}
 
 	/**
@@ -170,7 +196,7 @@ public class EasyCopyAction implements IObjectActionDelegate {
 
 	private String processIAdaptable(IAdaptable element) {
 		String path = "";
-		Object selected = getSelected(element);
+		IResource selected = getSelected(element);
 
 		if (selected instanceof IResource)
 			path = ((IResource) selected).getFullPath().toString();
@@ -180,73 +206,68 @@ public class EasyCopyAction implements IObjectActionDelegate {
 	}
 
 	/**
-	 * 根据选择的文件进行工程信息的检测和设置 主要设置内容：1，工程名称 2，源文件目录 3，类文件目录
+	 * Check and set the project information: projectName,projectRawLocation and
+	 * defaultOutput
 	 * 
 	 * @param l
-	 *            选择条目列表
-	 * @return 检测设置成功与否
+	 * @return
 	 */
 	private boolean getProjectInfo(List<IAdaptable> l) {
 		if (l == null) {
 			return false;
 		}
-		String[] srcDirs = store.getString(PreferenceConstants.P_SOURCE_DIRS).split(":");
-		String[] outDirs = store.getString(PreferenceConstants.P_OUTPUT_DIRS).split(":");
 
-		String a = "";
-		IAdaptable e = l.get(0);
-		a = processIAdaptable(e);
-		projectName = a.substring(1, a.indexOf(JAVA_FILE_SEPARATOR, 2));
-		File f = getDir(e);
-		String pathTempStr = f.toString();
-		String projAbsPath = pathTempStr.substring(0, pathTempStr.toLowerCase().indexOf(projectName.toLowerCase()) + projectName.length() + 1);
-		// 判断源文件目录
-		for (int i = 0; i < srcDirs.length; i++) {
-			// 表示源文件与class同目录
-			if (srcDirs[i].equals(".")) {
-				sourceDir = ".";
-				break;
-			}
-			File testDir = new File(projAbsPath + srcDirs[i]);
-			if (testDir.exists()) {
-				sourceDir = srcDirs[i];
-				break;
+		IResource resource = getSelected(l.get(0));
+		IProject project = resource.getProject();
+		projectName = project.getName();
+		projectRawLocation = project.getRawLocation().toString();
+
+		IJavaProject javaProject = JavaCore.create(project);
+		try {
+			defaultOutput = removeProjectName(javaProject.getOutputLocation().toString());
+		} catch (JavaModelException e1) {
+			e1.printStackTrace();
+		}
+
+		IClasspathEntry[] dpc = javaProject.readRawClasspath();
+		for (IClasspathEntry e : dpc) {
+			if (e.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+				srcClassMap.put(removeProjectName(e.getPath()), getOutputLocation(e.getOutputLocation()));
 			}
 		}
-		if (sourceDir.length() < 1) {
-			MessageDialog.openInformation(shell, "EasyCopy Plug-in", "Source Dir not found! ProjectPath=" + projAbsPath);
+
+		if (defaultOutput.length() < 1 || projectName.length() < 1 || srcClassMap.size() < 1) {
+			MessageDialog.openInformation(shell, "EasyCopy Plug-in", "Sorry, I can not do EasyCopy because of the incorrect configuration for this project!");
 			return false;
-		}
-
-		// 判断类输出目录
-		for (int i = 0; i < outDirs.length; i++) {
-			String tmp = outDirs[i];
-			if ("webapp".equalsIgnoreCase(tmp) || "webroot".equalsIgnoreCase(tmp)) {
-				tmp = tmp + "/WEB-INF/classes";
-			}
-			if (".".equals(tmp)) {
-				tmp = "WEB-INF/classes";
-			}
-			File testDir = new File(projAbsPath + tmp);
-			if (testDir.exists()) {
-				outputDir = tmp;
-				break;
-			}
-		}
-		if (outputDir.length() < 1) {
-			MessageDialog.openInformation(shell, "EasyCopy Plug-in", "Classes Dir not found! ProjectPath=" + projAbsPath);
-			return false;
-		}
-
-		if (sourceDir.equals(".")) {
-			sourceDir = outputDir;
 		}
 
 		return true;
 	}
 
+	private String getOutputLocation(IPath p) {
+		if (p == null) {
+			return defaultOutput;
+		}
+		return removeProjectName(p);
+	}
+
+	/**
+	 * 
+	 Trim the first string: /projectName/
+	 * 
+	 * @param p
+	 * @return
+	 */
+	private String removeProjectName(IPath p) {
+		return removeProjectName(p.toString());
+	}
+
+	private String removeProjectName(String p) {
+		return p.substring(projectName.length() + 2);
+	}
+
 	private File getDir(IAdaptable element) {
-		Object selected = getSelected(element);
+		IResource selected = getSelected(element);
 		if (selected == null)
 			return null;
 
@@ -260,8 +281,8 @@ public class EasyCopyAction implements IObjectActionDelegate {
 		return directory;
 	}
 
-	private Object getSelected(IAdaptable element) {
-		Object selected = null;
+	private IResource getSelected(IAdaptable element) {
+		IResource selected = null;
 		if (element instanceof IResource)
 			selected = (IResource) element;
 		else
@@ -269,56 +290,92 @@ public class EasyCopyAction implements IObjectActionDelegate {
 		return selected;
 	}
 
-	private boolean copyClass(File f) {
+	private boolean easyCopy(IAdaptable element) {
+
 		boolean r = false;
-		String absFilePath = f.toString().replaceAll("\\\\", JAVA_FILE_SEPARATOR);
+		File sourceFile = getDir(element);
 
-		String fileName = f.getName();
-		if (fileName.endsWith(JAVA_EXT) && store.getBoolean(PreferenceConstants.P_COPY_CLASSES)) { // 是java文件且只复制classes文件
-			String classFileName = fileName.replace(JAVA_EXT, CLASS_EXT);
-			String classPath = this.outputDir + JAVA_FILE_SEPARATOR
-					+ absFilePath.substring(absFilePath.indexOf(sourceDir) + sourceDir.length() + 1, absFilePath.indexOf(fileName));
-			String dstPath = this.dstDir + JAVA_FILE_SEPARATOR + this.projectName + JAVA_FILE_SEPARATOR;
-
-			String srcClass = absFilePath.replace(this.sourceDir, this.outputDir).replace(fileName, classFileName);
-
-			File dstClassDir = new File(dstPath + classPath);
-			dstClassDir.mkdirs();
-			File dstClassFile = new File(dstPath + classPath + classFileName);
-			r = fileCopy(new File(srcClass), dstClassFile);
-
-			if (r) {
-				copiedClassesList.add(dstClassFile.toString());
-			}
-
-			// 如下copy匿名类,比如像:Test$1.class,Test$1UsableFeeCall.class之类的
-			String pathStr = srcClass.substring(0, srcClass.indexOf(classFileName));
-			File path = new File(pathStr);
-			String[] list = path.list(new DirFilter(fileName.substring(0, fileName.indexOf(".")) + "\\$.*\\.class"));
-			Arrays.sort(list);
-			for (int i = 0; i < list.length; i++) {
-				File dstInerClass = new File(dstPath + classPath + list[i]);
-				r = fileCopy(new File(pathStr + list[i]), dstInerClass);
-				if (r) {
-					copiedClassesList.add(dstInerClass.toString());
-				}
-			}
-
+		String fileName = sourceFile.getName();
+		// Java file && need to copy the class file
+		if (fileName.endsWith(JAVA_EXT) && store.getBoolean(PreferenceConstants.P_COPY_CLASSES)) {
+			r = copyClass(element);
 		} else {
-			String dstPath = this.dstDir + JAVA_FILE_SEPARATOR + this.projectName;
-			String dstFileDirStr = absFilePath.substring(absFilePath.toLowerCase().indexOf(this.projectName.toLowerCase()) + this.projectName.length(),
-					absFilePath.indexOf(fileName));
-			File dstFileDir = new File(dstPath + dstFileDirStr);
-			dstFileDir.mkdirs();
-			File dstFile = new File(dstPath + dstFileDirStr + fileName);
-			r = fileCopy(f, dstFile);
-			if (r) {
-				copiedSorcesList.add(dstFile.toString());
-			}
+			String targetFilePath = processIAdaptable(element);
+			r = copySource(sourceFile, targetFilePath);
 		}
 
 		return r;
 
+	}
+
+	private String getClassFilePath(String rawFile, String src, String output) {
+		// src/test/java/com/hp/sqm/slam/ttraggr/service/impl/DbUnitUtils.java
+		return rawFile.replace(src, output).replace(JAVA_EXT, CLASS_EXT);
+	}
+
+	private boolean copyClass(IAdaptable element) {
+
+		boolean r = false;
+
+		String rawFile = removeProjectName(processIAdaptable(element));
+		String output = "";
+		String src = "";
+		for (String key : srcClassMap.keySet()) {
+			if (rawFile.indexOf(key) >= 0) {
+				output = srcClassMap.get(key);
+				src = key;
+			}
+		}
+
+		String classFilePath = getClassFilePath(rawFile, src, output);
+
+		File cf = new File(projectRawLocation + JAVA_FILE_SEPARATOR + classFilePath);
+		if (!cf.exists()) {
+			return false;
+		}
+
+		String dstClass = dstDir + JAVA_FILE_SEPARATOR + projectName + JAVA_FILE_SEPARATOR;
+		String classFilePathWithoutName = classFilePath.substring(0, classFilePath.lastIndexOf(JAVA_FILE_SEPARATOR));
+
+		File dstClassDir = new File(dstClass + classFilePathWithoutName);
+		dstClassDir.mkdirs();
+
+		File dstClassFile = new File(dstClass + classFilePath);
+
+		r = fileCopy(cf, dstClassFile);
+
+		if (r) {
+			copiedClassesList.add(dstClassFile.toString());
+		}
+
+		// Copy the inner classes
+		String fileName = cf.getName();
+		File path = new File(projectRawLocation + JAVA_FILE_SEPARATOR + classFilePathWithoutName);
+		String[] list = path.list(new DirFilter(fileName.substring(0, fileName.indexOf(".")) + "\\$.*\\.class"));
+		Arrays.sort(list);
+		for (int i = 0; i < list.length; i++) {
+			File dstInerClass = new File(dstClass + classFilePathWithoutName + JAVA_FILE_SEPARATOR + list[i]);
+			r = fileCopy(new File(projectRawLocation + JAVA_FILE_SEPARATOR + classFilePathWithoutName + JAVA_FILE_SEPARATOR + list[i]), dstInerClass);
+			if (r) {
+				copiedClassesList.add(dstInerClass.toString());
+			}
+		}
+		return r;
+	}
+
+	private boolean copySource(File sourceFile, String targetFilePath) {
+		boolean r;
+		String dstPath = this.dstDir + JAVA_FILE_SEPARATOR + targetFilePath;
+		String fileName = sourceFile.getName();
+		String dstFileDirStr = this.dstDir + JAVA_FILE_SEPARATOR + targetFilePath.substring(0, targetFilePath.indexOf(fileName));
+		File dstFileDir = new File(dstFileDirStr);
+		dstFileDir.mkdirs();
+		File dstFile = new File(dstPath);
+		r = fileCopy(sourceFile, dstFile);
+		if (r) {
+			copiedSorcesList.add(dstFile.toString());
+		}
+		return r;
 	}
 
 	private boolean fileCopy(File f1, File newfile) {
