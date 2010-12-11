@@ -36,6 +36,7 @@ public class EasyCopyPreferencePage extends FieldEditorPreferencePage implements
 		addField(new StringFieldEditor(PreferenceConstants.P_SOURCE_DIRS, "General &Source folder names:", getFieldEditorParent()));
 		addField(new StringFieldEditor(PreferenceConstants.P_OUTPUT_DIRS, "General &Output folder names:", getFieldEditorParent()));
 
+		addField(new BooleanFieldEditor(PreferenceConstants.P_COPY_CLASSES, "Copy &Classes,otherwise copy the sources", getFieldEditorParent()));
 		addField(new BooleanFieldEditor(PreferenceConstants.P_OVERWRITE, "Overwrite &Existing files", getFieldEditorParent()));
 		addField(new BooleanFieldEditor(PreferenceConstants.P_GENERATE_LOG, "&Generate log", getFieldEditorParent()));
 		addField(new BooleanFieldEditor(PreferenceConstants.P_INFORM_ME, "&Inform me", getFieldEditorParent()));

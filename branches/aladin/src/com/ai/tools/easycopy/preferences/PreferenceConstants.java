@@ -8,6 +8,9 @@ public class PreferenceConstants {
 	public static final String P_PATH = "directoryCopy2";
 
 	public static final String P_GENERATE_LOG = "generateLog";
+	
+	public static final String P_COPY_CLASSES = "copyClasses";
+
 
 	public static final String P_INFORM_ME = "informMe";
 	

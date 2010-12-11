@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Easycopy Plug-in
-Bundle-SymbolicName: com.ai.evan.easycopy; singleton:=true
+Bundle-SymbolicName: com.ai.tools.easycopy;singleton:=true
 Bundle-Version: 1.0.0
-Bundle-Activator: com.ai.evan.easycopy.Activator
+Bundle-Activator: com.ai.tools.easycopy.Activator
 Bundle-Vendor: AI
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
