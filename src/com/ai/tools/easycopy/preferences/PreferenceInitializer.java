@@ -20,8 +20,9 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		store.setDefault(PreferenceConstants.P_PATH, "c:\\temp");
 
 		store.setDefault(PreferenceConstants.P_SOURCE_DIRS, "src");
-		store.setDefault(PreferenceConstants.P_OUTPUT_DIRS, "bin:webapp:WebRoot");
+		store.setDefault(PreferenceConstants.P_OUTPUT_DIRS, "bin:webapp:WebRoot:classes");
 
+		store.setDefault(PreferenceConstants.P_COPY_CLASSES, true);
 		store.setDefault(PreferenceConstants.P_OVERWRITE, true);
 		store.setDefault(PreferenceConstants.P_GENERATE_LOG, true);
 		store.setDefault(PreferenceConstants.P_INFORM_ME, true);

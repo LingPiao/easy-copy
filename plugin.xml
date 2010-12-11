@@ -7,28 +7,28 @@
       <objectContribution
       adaptable="false"
             objectClass="org.eclipse.core.runtime.IAdaptable"
-            id="com.ai.evan.easycopy.contribution1">
+            id="com.ai.tools.easycopy.contribution1">
          <action
                label="EasyCopy"
-               class="com.ai.evan.easycopy.popup.actions.EasyCopyAction"
+               class="com.ai.tools.easycopy.popup.actions.EasyCopyAction"
                menubarPath="additions"
-               id="com.ai.evan.easycopy.newAction">
+               id="com.ai.tools.easycopy.newAction">
          </action>
       </objectContribution>
    </extension>
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            class="com.ai.evan.easycopy.preferences.EasyCopyPreferencePage"
+            class="com.ai.tools.easycopy.preferences.EasyCopyPreferencePage"
             category="org.eclipse.jdt.ui.preferences.JavaBasePreferencePage"
-            id="com.ai.evan.easycopy.preferences.EasyCopyPreferencePage"
+            id="com.ai.tools.easycopy.preferences.EasyCopyPreferencePage"
             name="EasyCopy">
       </page>
    </extension>
    <extension
          point="org.eclipse.core.runtime.preferences">
       <initializer
-            class="com.ai.evan.easycopy.preferences.PreferenceInitializer">
+            class="com.ai.tools.easycopy.preferences.PreferenceInitializer">
       </initializer>
    </extension>
 
