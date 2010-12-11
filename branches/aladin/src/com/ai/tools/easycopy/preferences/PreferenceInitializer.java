@@ -19,8 +19,8 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 		store.setDefault(PreferenceConstants.P_PATH, "c:\\temp");
 
-		store.setDefault(PreferenceConstants.P_SOURCE_DIRS, "src");
-		store.setDefault(PreferenceConstants.P_OUTPUT_DIRS, "bin:webapp:WebRoot:classes");
+		//store.setDefault(PreferenceConstants.P_SOURCE_DIRS, "src");
+		//store.setDefault(PreferenceConstants.P_OUTPUT_DIRS, "bin:webapp:WebRoot:classes");
 
 		store.setDefault(PreferenceConstants.P_COPY_CLASSES, true);
 		store.setDefault(PreferenceConstants.P_OVERWRITE, true);
