@@ -220,7 +220,12 @@ public class EasyCopyAction implements IObjectActionDelegate {
 		IResource resource = getSelected(l.get(0));
 		IProject project = resource.getProject();
 		projectName = project.getName();
-		projectRawLocation = project.getRawLocation().toString();
+
+		if (project.getRawLocation() != null) {
+			projectRawLocation = project.getRawLocation().toString();
+		} else {
+			projectRawLocation = project.getLocation() == null ? "" : project.getLocation().toString();
+		}
 
 		IJavaProject javaProject = JavaCore.create(project);
 		if (javaProject == null || !javaProject.exists()) {
