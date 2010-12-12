@@ -223,6 +223,10 @@ public class EasyCopyAction implements IObjectActionDelegate {
 		projectRawLocation = project.getRawLocation().toString();
 
 		IJavaProject javaProject = JavaCore.create(project);
+		if (javaProject == null || !javaProject.exists()) {
+			MessageDialog.openInformation(shell, "EasyCopy Plug-in", "It is not a Java Project!");
+			return false;
+		}
 		try {
 			defaultOutput = removeProjectName(javaProject.getOutputLocation().toString());
 		} catch (JavaModelException e1) {
@@ -309,7 +313,6 @@ public class EasyCopyAction implements IObjectActionDelegate {
 	}
 
 	private String getClassFilePath(String rawFile, String src, String output) {
-		// src/test/java/com/hp/sqm/slam/ttraggr/service/impl/DbUnitUtils.java
 		return rawFile.replace(src, output).replace(JAVA_EXT, CLASS_EXT);
 	}
 
